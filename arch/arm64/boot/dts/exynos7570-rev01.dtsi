@@ -139,8 +139,8 @@
 		compatible = "samsung,exynos-sc-cpufreq";
 
                 cl0_idx_num = <17>;
-                cl0_max_support_idx = <5>;
-                cl0_min_support_idx = <14>;
+                cl0_max_support_idx = <2>;
+                cl0_min_support_idx = <16>;
                 cl0_boot_max_qos = <1378000>;
                 cl0_boot_min_qos = <1378000>;
                 cl0_boot_lock_time = <40000000>;
@@ -233,7 +233,7 @@
 		delay_time_list = "20";
 
 		/* initial_freq, default_qos, suspend_freq, min_freq, max_freq, reboot_freq */
-		freq_info = <666000 415000 415000 415000 666000 415000>;
+		freq_info = <830000 415000 415000 415000 830000 415000>;
 
 		/* PM QoS */
 		boot_qos_timeout = <40>;
