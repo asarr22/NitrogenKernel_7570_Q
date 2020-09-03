@@ -1,0 +1,80 @@
+#Nitrogen Kernel Installer
+ui_print("****************************************");
+ui_print("NN  N III TTT RRR  000 GGG EEE NN  N"); 
+ui_print("NN  N  I   T  R  R 0 0 G   E   NN  N");
+ui_print("N N N  I   T  R R  0 0 G   EEE N N N");
+ui_print("N  NN  I   T  R R  0 0 G G E   N  NN");                  
+ui_print("N   N III  T  R  R 000 GGG EEE N   N");        
+ui_print("****************************************");
+ui_print("* Developer:                Asarre@XDA *");
+ui_print("****************************************");
+ui_print("* Supported devices:        Exynos7570 *");
+ui_print("****************************************");
+ui_print(" Mounted partitions");
+run_program("/sbin/busybox", "mount", "/system");
+run_program("/sbin/busybox", "mount", "/data");
+run_program("/sbin/busybox", "mount", "/vendor");
+#####################################################################
+#                       Deknoxing
+#####################################################################
+
+ui_print("-- Removing Knox");
+delete_recursive("/system/system/container");
+delete_recursive("/system/system/preloadedsso");
+delete_recursive("/system/system/etc/secure_storage/com.sec.knox.store");
+delete_recursive("/system/system/app/KnoxAppsUpdateAgent");
+delete_recursive("/system/system/app/KnoxAttestationAgent");
+delete_recursive("/system/system/app/KnoxFolderContainer2");
+delete_recursive("/system/system/app/KnoxRemoteContentsProvider");
+delete_recursive("/system/system/app/KnoxSetupWizardClient");
+delete_recursive("/system/system/app/KnoxSwitcher");
+delete_recursive("/system/system/app/SecureFolderSetupPage");
+delete_recursive("/system/system/app/Bridge");
+delete_recursive("/system/system/app/ELMAgent");
+delete_recursive("/system/system/app/RCPComponents");
+delete_recursive("/system/system/app/SecurityLogAgent");
+delete_recursive("/system/system/app/UniversalMDMClient");
+delete_recursive("/system/system/app/SwitchKnoxI");
+delete_recursive("/system/system/app/SwitchKnoxII");
+delete_recursive("/system/system/app/KnoxFolderContainer");
+delete_recursive("/system/system/app/Rlc");
+delete_recursive("/system/system/priv-app/Rlc");
+delete_recursive("/system/system/priv-app/KnoxCore");
+delete_recursive("/system/system/priv-app/KnoxGuard");
+delete_recursive("/system/system/priv-app/KLMSAgent");
+delete_recursive("/system/system/priv-app/SPDClient");
+delete("/system/system/lib/libvkservice.so");
+delete("/system/system/lib/libvkjni.so");
+#####################################################################
+#                       Phone Variant Detection
+#####################################################################
+ui_print("@ Detecting phone variant...");
+if is_substring("G570", getprop("ro.boot.bootloader")) then
+    ui_print("@ G570 J5P detected, extracting files...");
+    package_extract_file("Nitrogen/device/on5xelte/boot.img", "/dev/block/platform/13540000.dwmmc0/by-name/BOOT");
+endif;
+if is_substring("J400", getprop("ro.boot.bootloader")) then
+    ui_print("@  J4 2018 detected, extracting files...");
+    package_extract_file("Nitrogen/device/j4lte/boot.img", "/dev/block/platform/13540000.dwmmc0/by-name/BOOT");
+endif;
+if is_substring("J330", getprop("ro.boot.bootloader")) then
+    ui_print("@ J3 2017 detected, extracting files...");
+    package_extract_file("Nitrogen/device/j3y17lte/boot.img", "/dev/block/platform/13540000.dwmmc0/by-name/BOOT");
+endif;
+
+ui_print("-- Extracting System Files...");
+package_extract_dir("Nitrogen/system", "/system");
+package_extract_dir("Nitrogen/vendor", "/vendor");
+
+ui_print("-- Installing Magisk");
+package_extract_dir("Nitrogen/magisk", "/tmp/magisk");
+run_program("/sbin/busybox", "unzip", "/tmp/magisk/magisk.zip", "META-INF/com/google/android/*", "-d", "/tmp/magisk");
+run_program("/sbin/busybox", "sh", "/tmp/magisk/META-INF/com/google/android/update-binary", "dummy", "1", "/tmp/magisk/magisk.zip");
+
+#####################################################################
+#                           Unmount
+#####################################################################
+unmount("/system");
+unmount("/vendor");
+ui_print(" Enjoy Nitrogen ");
+ui_print("****************************************");
