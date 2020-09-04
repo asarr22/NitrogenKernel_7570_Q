@@ -17,7 +17,7 @@
 # Main Dir
 CR_DIR=$(pwd)
 # Define toolchan path
-CR_TC=~/Android/Toolchains/aarch64-linux-gnu/bin/aarch64-linux-gnu-
+CR_TC=/home/sarr/aarch64-linux-android-4.9/bin/aarch64-linux-android-
 # Define proper arch and dir for dts files
 CR_DTS=arch/arm64/boot/dts
 # Define boot.img out dir
@@ -50,19 +50,20 @@ export $CR_ARCH
 ##########################################
 # Device specific Variables [SM-G570X]
 CR_DTSFILES_G570X="exynos7570-on5xelte_swa_open_00.dtb exynos7570-on5xelte_swa_open_01.dtb exynos7570-on5xelte_swa_open_02.dtb exynos7570-on5xelte_swa_open_03.dtb exynos7570-on5xelte_swa_open_04.dtb exynos7570-on5xreflte_swa_open_00.dtb"
-CR_CONFG_G570X=exynos7870-on5xelte_defconfig
-CR_CONFG_G570Xt=exynos7870-on5xelte_defconfig_t
+CR_CONFG_G570X=exynos7570-on5xelte_defconfig
+CR_CONFG_G570Xt=exynos7570-on5xeltet_defconfig
 CR_VARIANT_G570X=G570X
 # Device specific Variables [SM-J330X]
 CR_DTSFILES_J330X="exynos7570-j3y17lte_eur_open_00.dtb exynos7570-j3y17lte_eur_open_01.dtb exynos7570-j3y17lte_eur_open_02.dtb exynos7570-j3y17lte_eur_open_04.dtb exynos7570-j3y17lte_kor_open_02.dtb"
-CR_CONFG_J330X=exynos7870-j3y17lte_defconfig
-CR_CONFG_J330Xt=exynos7870-j3y17lte_defconfig_t
+CR_CONFG_J330X=exynos7570-j3y17lte_defconfig
+CR_CONFG_J330Xt=exynos7570-j3y17ltet_defconfig
 CR_VARIANT_J330X=J330X
 # Device specific Variables [SM-J400X]
 CR_DTSFILES_J400X="exynos7570-j4lte_mea_open_00.dtb exynos7570-j4lte_mea_open_01.dtb exynos7570-j4lte_mea_open_02.dtb"
-CR_CONFG_J400X=exynos7870-j4lte_defconfig
-CR_CONFG_J400Xt=exynos7870-j4lte_defconfig_t
+CR_CONFG_J400X=exynos7570-j4lte_defconfig
+CR_CONFG_J400Xt=exynos7570-j4ltet_defconfig
 CR_VARIANT_J400X=J400X
+CR_DEFCON=NULL
 # Prefixes
 CR_ROOT="0"
 CR_PERMISSIVE="0"
@@ -111,7 +112,7 @@ if [ $CR_CLEAN = 1 ]; then
      rm -rf $CR_DTS/.*.cmd
      rm -rf $CR_DTS/*.dtb
      rm -rf $CR_DIR/.config
-     rm -rf $CR_DTS/exynos7870.dtsi
+     rm -rf $CR_DTS/exynos7570.dtsi
      rm -rf $CR_OUT/*.img
      rm -rf $CR_OUT/*.zip
 fi
@@ -123,7 +124,7 @@ if [ $CR_CLEAN = 0 ]; then
      rm -rf $CR_DTS/.*.cmd
      rm -rf $CR_DTS/*.dtb
      rm -rf $CR_DIR/.config
-     rm -rf $CR_DTS/exynos7870.dtsi
+     rm -rf $CR_DTS/exynos7570.dtsi
 fi
 }
 
@@ -160,17 +161,7 @@ BUILD_IMAGE_NAME()
 
 BUILD_GENERATE_CONFIG()
 {
-  # Only use for devices that are unified with 2 or more configs
-  echo "----------------------------------------------"
-	echo " "
-	echo "Building defconfig for $CR_VARIANT"
-  echo " "
-  # Respect CLEAN build rules
-  BUILD_CLEAN
-  if [ -e $CR_DIR/arch/$CR_ARCH/configs/tmp_defconfig ]; then
-    echo " cleanup old configs "
-    rm -rf $CR_DIR/arch/$CR_ARCH/configs/tmp_defconfig
-  fi
+ CR_DEFCON=$CR_DEF
 }
 
 BUILD_OUT()
@@ -193,9 +184,8 @@ BUILD_ZIMAGE()
 	echo " "
 	echo "Building zImage for $CR_VARIANT"
 	export LOCALVERSION=-$CR_IMAGE_NAME
-  cp $CR_DTB_MOUNT $CR_DTS/exynos7870.dtsi
-	echo "Make $CR_CONFIG"
-	make $CR_DEF
+	echo "Make $CR_DEF"
+	make $CR_DEFCON
 	make -j$CR_JOBS
 	if [ ! -e $CR_KERNEL ]; then
 	exit 0;
@@ -223,7 +213,7 @@ BUILD_DTB()
 	rm -rf $CR_DTS/.*.tmp
 	rm -rf $CR_DTS/.*.cmd
 	rm -rf $CR_DTS/*.dtb
-  rm -rf $CR_DTS/exynos7870.dtsi
+  rm -rf $CR_DTS/exynos7570.dtsi
     du -k "$CR_DTB" | cut -f1 >sizdT
     sizdT=$(head -n 1 sizdT)
     rm -rf sizdT
@@ -293,16 +283,16 @@ PACK_FLASHABLE()
 
 # Main Menu
 clear
-echo "----------------------------------------------"
+echo "--------------------------------------------------------"
 echo "  ###   ## #### #####  ##### #####  ####  ####  ###   ##"
 echo "  ####  ##  ##    ##   ##  # ## ##  ##    ##    ####  ##"
 echo "  ####  ##  ##    ##   ##### ## ##  ##    ##    ####  ##"
 echo "  ## ## ##  ##    ##   ###   ## ##  ## ## ####  ## ## ##"
 echo "  ##  ####  ##    ##   ## #  ## ##  ## ## ##    ##  ####"
 echo "  ##   ### ####   ##   ##  # #####  ##### ####  ##   ###"
-echo "----------------------------------------------"
+echo "--------------------------------------------------------"
 echo "$CR_NAME $CR_VERSION Build Script"
-echo "----------------------------------------------"
+echo "--------------------------------------------------------"
 PS3='Please select your option (1-10): '
 menuvar=("SM-G570X" "SM-J330X" "SM-J400X" "Build_All" "Exit")
 select menuvar in "${menuvar[@]}"
@@ -311,17 +301,16 @@ do
         "SM-G570X")
             clear
             echo "Starting $CR_VARIANT_G570X kernel build..."
-            CR_CONFIG=$CR_CONFG_G570X
             CR_DTSFILES=$CR_DTSFILES_G570X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
-			  CR_DEF= $CR_CONFG_G570Xt
               CR_VARIANT=$CR_VARIANT_G570X-TREBLE
               CR_RAMDISK=$CR_RAMDISK
               CR_DTB_MOUNT=$CR_DTS_TREBLE
+              CR_DEF=$CR_CONFG_G570Xt
             else
               echo " Building OneUI variant "
-			  CR_DEF= $CR_CONFG_G570X
+	      CR_DEF=$CR_CONFG_G570X
               CR_VARIANT=$CR_VARIANT_G570X-ONEUI
               CR_DTB_MOUNT=$CR_DTS_TREBLE
               CR_RAMDISK=$CR_RAMDISK
@@ -339,17 +328,16 @@ do
         "SM-J330X")
             clear
             echo "Starting $CR_VARIANT_J330X kernel build..."
-            CR_CONFIG=$CR_CONFG_J330X
             CR_DTSFILES=$CR_DTSFILES_J330X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
-			  CR_DEF= $CR_CONFG_J330Xt
+	      CR_DEF=$CR_CONFG_J330Xt
               CR_VARIANT=$CR_VARIANT_J330X-TREBLE
               CR_RAMDISK=$CR_RAMDISK
               CR_DTB_MOUNT=$CR_DTS_TREBLE
             else
               echo " Building OneUI variant "
-			  CR_DEF= $CR_CONFG_J330X
+	      CR_DEF=$CR_CONFG_J330X
               CR_VARIANT=$CR_VARIANT_J330X-ONEUI
               CR_DTB_MOUNT=$CR_DTS_TREBLE
               CR_RAMDISK=$CR_RAMDISK
@@ -367,17 +355,16 @@ do
         "SM-J400X")
             clear
             echo "Starting $CR_VARIANT_J400X kernel build..."
-            CR_CONFIG=$CR_CONFG_J400X
             CR_DTSFILES=$CR_DTSFILES_J400X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
-			  CR_DEF= $CR_CONFG_J400Xt
+	      CR_DEF=$CR_CONFG_J400Xt
               CR_VARIANT=$CR_VARIANT_J400X-TREBLE
               CR_RAMDISK=$CR_RAMDISK
               CR_DTB_MOUNT=$CR_DTS_TREBLE
             else
               echo " Building OneUI variant "
-			  CR_DEF= $CR_CONFG_J400X
+	      CR_DEF= $CR_CONFG_J400X
               CR_VARIANT=$CR_VARIANT_J400X-ONEUI
               CR_DTB_MOUNT=$CR_DTS_TREBLE
               CR_RAMDISK=$CR_RAMDISK
@@ -395,17 +382,16 @@ do
 
         "Build_All")
             echo "Starting $CR_VARIANT_G570X kernel build..."
-            CR_CONFIG=$CR_CONFG_G570X
             CR_DTSFILES=$CR_DTSFILES_G570X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
-			  CR_DEF= $CR_CONFG_G570Xt
+	      CR_DEF=$CR_CONFG_G570Xt
               CR_VARIANT=$CR_VARIANT_G570X-TREBLE
               CR_RAMDISK=$CR_RAMDISK
               CR_DTB_MOUNT=$CR_DTS_TREBLE
             else
               echo " Building OneUI variant "
-			  CR_DEF= $CR_CONFG_G570X
+	      CR_DEF=$CR_CONFG_G570X
               CR_VARIANT=$CR_VARIANT_G570X-ONEUI
               CR_DTB_MOUNT=$CR_DTS_TREBLE
               CR_RAMDISK=$CR_RAMDISK
@@ -418,17 +404,16 @@ do
             PACK_FLASHABLE
             BUILD_OUT
             echo "Starting $CR_VARIANT_J330X kernel build..."
-            CR_CONFIG=$CR_CONFG_J330X
             CR_DTSFILES=$CR_DTSFILES_J330X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
-			  CR_DEF= $CR_CONFG_J330Xt
+	      CR_DEF=$CR_CONFG_J330Xt
               CR_VARIANT=$CR_VARIANT_J330X-TREBLE
               CR_RAMDISK=$CR_RAMDISK
               CR_DTB_MOUNT=$CR_DTS_TREBLE
             else
               echo " Building OneUI variant "
-			  CR_DEF= $CR_CONFG_J330X
+	      CR_DEF= $CR_CONFG_J330X
               CR_VARIANT=$CR_VARIANT_J330X-ONEUI
               CR_DTB_MOUNT=$CR_DTS_TREBLE
               CR_RAMDISK=$CR_RAMDISK
@@ -441,17 +426,16 @@ do
             PACK_FLASHABLE
             BUILD_OUT
             echo "Starting $CR_VARIANT_J400X kernel build..."
-            CR_CONFIG=$CR_CONFG_J400X
             CR_DTSFILES=$CR_DTSFILES_J400X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
-			  CR_DEF= $CR_CONFG_J400Xt
+	      CR_DEF=$CR_CONFG_J400Xt
               CR_VARIANT=$CR_VARIANT_J400X-TREBLE
               CR_RAMDISK=$CR_RAMDISK
               CR_DTB_MOUNT=$CR_DTS_TREBLE
             else
               echo " Building OneUI variant "
-			  CR_DEF= $CR_CONFG_J400X
+	      CR_DEF=$CR_CONFG_J400X
               CR_VARIANT=$CR_VARIANT_J400X-ONEUI
               CR_DTB_MOUNT=$CR_DTS_TREBLE
               CR_RAMDISK=$CR_RAMDISK
