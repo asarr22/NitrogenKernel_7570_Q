@@ -30,7 +30,7 @@ CR_RAMDISK=$CR_DIR/Nitrogen/universal7570
 # Compiled image name and location (Image/zImage)
 CR_KERNEL=$CR_DIR/arch/arm64/boot/Image
 # Compiled dtb by dtbtool
-CR_DTB=$CR_DIR/boot.img-dtb
+CR_DTB=$CR_DIR/arch/arm64/boot/boot.img-dtb
 # Kernel Name and Version
 CR_VERSION=V5.0-Beta
 CR_NAME=NitrogenKernel
@@ -47,6 +47,18 @@ export CROSS_COMPILE=$CR_TC
 export ANDROID_MAJOR_VERSION=$CR_ANDROID
 export PLATFORM_VERSION=$CR_PLATFORM
 export $CR_ARCH
+
+# DTB SPECIFIC
+CR_A=null
+OUTDIR=$CR_DIR/arch/$ARCH/boot
+DTSDIR=$CR_DIR/arch/$ARCH/boot/dts
+DTBDIR=$OUTDIR/dtb
+DTCTOOL=$CR_DIR/scripts/dtc/dtc
+INCDIR=$CR_DIR/include
+PAGE_SIZE=2048
+DTB_PADDING=0
+
+
 ##########################################
 # Device specific Variables [SM-G570X]
 CR_DTSFILES_G570X="exynos7570-on5xelte_swa_open_00.dtb exynos7570-on5xelte_swa_open_01.dtb exynos7570-on5xelte_swa_open_02.dtb exynos7570-on5xelte_swa_open_03.dtb exynos7570-on5xelte_swa_open_04.dtb exynos7570-on5xreflte_swa_open_00.dtb"
@@ -87,6 +99,16 @@ else
      CR_CLEAN="0"
 fi
 
+#Particular dtb build 
+
+read -p "Build DTB With kernel (y/n) if N only DTB will be built > " yn
+if [ "$yn" = "Y" -o "$yn" = "y" ]; then
+     echo "DTB will be compiled with Zimage"
+     CR_KRI="1"
+else
+     echo "DTB Will be particulary built"
+     CR_KRI="0"
+fi
 # TREBLE / OneUI
 read -p "Variant? (1 (oneUI) | 2 (TREBLE) > " aud
 if [ "$aud" = "TREBLE" -o "$aud" = "2" ]; then
@@ -198,6 +220,52 @@ BUILD_ZIMAGE()
 	echo " "
 	echo "----------------------------------------------"
 }
+
+RUN_BUILD_DTB()
+{
+	# This source compiles particulary and it is recommended
+	[ -f "$DTCTOOL" ] || {
+		echo "You need to run ./build.sh first!"
+		exit 1
+	}
+	case $CR_A in
+	G570)
+		echo "Building Device blob tree for $CR_A"
+		DTSFILES="exynos7570-on5xelte_swa_open_00 exynos7570-on5xelte_swa_open_01
+				exynos7570-on5xelte_swa_open_02 exynos7570-on5xelte_swa_open_03 exynos7570-on5xreflte_swa_open_00"
+		;;
+	J330)
+		DTSFILES="exynos7570-j3y17lte_eur_open_00 exynos7570-j3y17lte_eur_open_01 
+		exynos7570-j3y17lte_kor_open_02 exynos7570-j3y17lte_eur_open_02 exynos7570-j3y17lte_eur_open_04"
+		;;
+	J330)
+		DTSFILES="exynos7570-j4lte_mea_open_00 exynos7570-j4lte_mea_open_01 exynos7570-j4lte_mea_open_02"
+		;;
+	
+	*)
+		echo "Unknown device: $CR_A"
+		exit 1
+		;;
+	esac
+	mkdir -p $OUTDIR $DTBDIR
+	cd $DTBDIR || {
+		echo "Unable to cd to $DTBDIR!"
+		exit 1
+	}
+	rm -f ./*
+	echo "Processing dts files."
+	for dts in $DTSFILES; do
+		echo "=> Processing: ${dts}.dts"
+		${CROSS_COMPILE}cpp -nostdinc -undef -x assembler-with-cpp -I "$INCDIR" "$DTSDIR/${dts}.dts" > "${dts}.dts"
+		echo "=> Generating: ${dts}.dtb"
+		$DTCTOOL -p $DTB_PADDING -i "$DTSDIR" -O dtb -o "${dts}.dtb" "${dts}.dts"
+	done
+	echo "Generating dtb.img."
+	$CR_DIR/scripts/dtbTool/dtbtool -o "$OUTDIR/dtb.img" -d "$DTBDIR/" -s $PAGE_SIZE
+	echo "Done."
+	mv $CR_DIR/arch/$ARCH/boot/dtb.img $CR_DIR/arch/$ARCH/boot/boot.img-dtb
+}
+
 BUILD_DTB()
 {
 	echo "----------------------------------------------"
@@ -284,7 +352,7 @@ PACK_FLASHABLE()
 # Main Menu
 clear
 echo "--------------------------------------------------------"
-echo "  ###   ## #### #####  ##### #####  ####  ####  ###   ##"
+echo "  ###   ## #### ###### ##### #####  ####  ####  ###   ##"
 echo "  ####  ##  ##    ##   ##  # ## ##  ##    ##    ####  ##"
 echo "  ####  ##  ##    ##   ##### ## ##  ##    ##    ####  ##"
 echo "  ## ## ##  ##    ##   ###   ## ##  ## ## ####  ## ## ##"
@@ -294,13 +362,14 @@ echo "--------------------------------------------------------"
 echo "$CR_NAME $CR_VERSION Build Script"
 echo "--------------------------------------------------------"
 PS3='Please select your option (1-10): '
-menuvar=("SM-G570X" "SM-J330X" "SM-J400X" "Build_All" "Exit")
+menuvar=("SM-G570X" "SM-J330X" "SM-J400X" "SM-J260X" "Build_All" "Exit")
 select menuvar in "${menuvar[@]}"
 do
     case $menuvar in
         "SM-G570X")
             clear
             echo "Starting $CR_VARIANT_G570X kernel build..."
+			CR_A=G570
             CR_DTSFILES=$CR_DTSFILES_G570X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
@@ -315,19 +384,25 @@ do
               CR_DTB_MOUNT=$CR_DTS_TREBLE
               CR_RAMDISK=$CR_RAMDISK
             fi
+			if [$CR_KRI = "1"]; then
             BUILD_IMAGE_NAME
             BUILD_GENERATE_CONFIG
             BUILD_ZIMAGE
-            BUILD_DTB
+            #BUILD_DTB
+			RUN_BUILD_DTB
             PACK_BOOT_IMG
             PACK_FLASHABLE
             BUILD_OUT
+			else 
+			RUN_BUILD_DTB
+			fi
             read -n1 -r key
             break
             ;;
         "SM-J330X")
             clear
             echo "Starting $CR_VARIANT_J330X kernel build..."
+			CR_A=J330			
             CR_DTSFILES=$CR_DTSFILES_J330X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
@@ -355,6 +430,7 @@ do
         "SM-J400X")
             clear
             echo "Starting $CR_VARIANT_J400X kernel build..."
+			CR_A=J400
             CR_DTSFILES=$CR_DTSFILES_J400X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
@@ -381,7 +457,8 @@ do
             ;;
 
         "Build_All")
-            echo "Starting $CR_VARIANT_G570X kernel build..."
+            echo "Starting $CR_VARIANT_G570X kernel build..."	
+			CR_A=G570
             CR_DTSFILES=$CR_DTSFILES_G570X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
@@ -404,6 +481,7 @@ do
             PACK_FLASHABLE
             BUILD_OUT
             echo "Starting $CR_VARIANT_J330X kernel build..."
+			CR_A=J330
             CR_DTSFILES=$CR_DTSFILES_J330X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
@@ -426,6 +504,7 @@ do
             PACK_FLASHABLE
             BUILD_OUT
             echo "Starting $CR_VARIANT_J400X kernel build..."
+			CR_A=G570
             CR_DTSFILES=$CR_DTSFILES_J400X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
