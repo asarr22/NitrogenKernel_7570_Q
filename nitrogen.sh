@@ -18,6 +18,7 @@
 CR_DIR=$(pwd)
 # Define toolchan path
 CR_TC=/home/sarr/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+#CR_TC=$CR_DIR/tc/bin/aarch64-linux-gnu-
 # Define proper arch and dir for dts files
 CR_DTS=arch/arm64/boot/dts
 # Define boot.img out dir
@@ -32,7 +33,7 @@ CR_KERNEL=$CR_DIR/arch/arm64/boot/Image
 # Compiled dtb by dtbtool
 CR_DTB=$CR_DIR/arch/arm64/boot/boot.img-dtb
 # Kernel Name and Version
-CR_VERSION=V5.0-Beta
+CR_VERSION=V5.0
 CR_NAME=NitrogenKernel
 # Thread count
 CR_JOBS=$(nproc --ignore=1)
@@ -156,7 +157,7 @@ BUILD_IMAGE_NAME()
 
   # Flashable_script
   if [ $CR_VARIANT = $CR_VARIANT_G570X-TREBLE ]; then
-    FL_VARIANT="G570X-TREBLE"
+    FL_VARIANT="G570X-AOSP"
     FL_MODEL=on5xelte
   fi
   if [ $CR_VARIANT = $CR_VARIANT_G570X-ONEUI ]; then
@@ -164,7 +165,7 @@ BUILD_IMAGE_NAME()
     FL_MODEL=on5xelte
   fi
   if [ $CR_VARIANT = $CR_VARIANT_J330X-TREBLE ]; then
-    FL_VARIANT="J330X-TREBLE"
+    FL_VARIANT="J330X-AOSP"
     FL_MODEL=j3y17lte
   fi
   if [ $CR_VARIANT = $CR_VARIANT_J330X-ONEUI ]; then
@@ -172,7 +173,7 @@ BUILD_IMAGE_NAME()
     FL_MODEL=j3y17lte
   fi
   if [ $CR_VARIANT = $CR_VARIANT_J400X-TREBLE ]; then
-    FL_VARIANT="J400X-TREBLE"
+    FL_VARIANT="J400X-AOSP"
     FL_MODEL=j4lte
   fi
   if [ $CR_VARIANT = $CR_VARIANT_J400X-ONEUI ]; then
@@ -288,6 +289,22 @@ BUILD_DTB()
 	echo " "
 	echo "----------------------------------------------"
 }
+ASARRE()
+{
+    mkdir outz
+	cp  $CR_KERNEL $CR_DIR/outz/boot.img-zImage
+}
+ASARRE3()
+{
+    mkdir outz
+	cp  $CR_KERNEL $CR_DIR/outz/J3boot.img-zImage
+}
+ASARRE4()
+{
+    mkdir outz
+	cp  $CR_KERNEL $CR_DIR/outz/J4boot.img-zImage
+}
+
 PACK_BOOT_IMG()
 {
 	echo "----------------------------------------------"
@@ -384,18 +401,16 @@ do
               CR_DTB_MOUNT=$CR_DTS_TREBLE
               CR_RAMDISK=$CR_RAMDISK
             fi
-			if [$CR_KRI = "1"]; then
             BUILD_IMAGE_NAME
             BUILD_GENERATE_CONFIG
             BUILD_ZIMAGE
+	    ASARRE
             #BUILD_DTB
-			RUN_BUILD_DTB
-            PACK_BOOT_IMG
-            PACK_FLASHABLE
-            BUILD_OUT
-			else 
-			RUN_BUILD_DTB
-			fi
+	    #RUN_BUILD_DTB
+            #PACK_BOOT_IMG
+            #PACK_FLASHABLE
+            #BUILD_OUT
+            #RUN_BUILD_DTB
             read -n1 -r key
             break
             ;;
@@ -420,10 +435,11 @@ do
             BUILD_IMAGE_NAME
             BUILD_GENERATE_CONFIG
             BUILD_ZIMAGE
-            BUILD_DTB
-            PACK_BOOT_IMG
-            PACK_FLASHABLE
-            BUILD_OUT
+			ASARRE3
+            #BUILD_DTB
+            #PACK_BOOT_IMG
+            #PACK_FLASHABLE
+            #BUILD_OUT
             read -n1 -r key
             break
             ;;
@@ -448,10 +464,11 @@ do
             BUILD_IMAGE_NAME
             BUILD_GENERATE_CONFIG
             BUILD_ZIMAGE
-            BUILD_DTB
-            PACK_BOOT_IMG
-            PACK_FLASHABLE
-            BUILD_OUT
+			ASARRE4
+            #BUILD_DTB
+            #PACK_BOOT_IMG
+            #PACK_FLASHABLE
+            #BUILD_OUT
             read -n1 -r key
             break
             ;;
