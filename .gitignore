@@ -191,3 +191,6 @@ arch/arm64/boot/boot.img-zImage
 builtime_bytes.txt
 offsets_sizes.txt
 fips_fmp_utils
+*.html
+*.dtb
+outz/Image J5 treble
