@@ -17,7 +17,9 @@
 # Main Dir
 CR_DIR=$(pwd)
 # Define toolchan path
-CR_TC=/home/sarr/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+#CR_TC=/home/sarr/TC/bin/aarch64-linux-android-
+CR_TC=/home/android/too/aarch64-linux-android-4.9-kernel/bin/aarch64-linux-android-
+#CR_TC=/media/sarr/SARR-DRIVER/toolchain/bin/aarch64-linux-android-
 #CR_TC=$CR_DIR/tc/bin/aarch64-linux-gnu-
 # Define proper arch and dir for dts files
 CR_DTS=arch/arm64/boot/dts
@@ -33,10 +35,10 @@ CR_KERNEL=$CR_DIR/arch/arm64/boot/Image
 # Compiled dtb by dtbtool
 CR_DTB=$CR_DIR/arch/arm64/boot/boot.img-dtb
 # Kernel Name and Version
-CR_VERSION=V5.0
+CR_VERSION=V5.1
 CR_NAME=NitrogenKernel
 # Thread count
-CR_JOBS=$(nproc --ignore=1)
+CR_JOBS=`grep processor /proc/cpuinfo|wc -l`
 # Target android version and platform (7/n/8/o/9/p)
 CR_ANDROID=q
 CR_PLATFORM=10.0.0
@@ -76,6 +78,11 @@ CR_DTSFILES_J400X="exynos7570-j4lte_mea_open_00.dtb exynos7570-j4lte_mea_open_01
 CR_CONFG_J400X=exynos7570-j4lte_defconfig
 CR_CONFG_J400Xt=exynos7570-j4ltet_defconfig
 CR_VARIANT_J400X=J400X
+# Device specific Variables [SM-J260X]
+CR_DTSFILES_J260X="exynos7570-j4lte_mea_open_00.dtb exynos7570-j4lte_mea_open_01.dtb exynos7570-j4lte_mea_open_02.dtb"
+CR_CONFG_J260X=exynos7570-j2corelte_defconfig
+CR_CONFG_J260Xt=exynos7570-j2coreltet_defconfig
+CR_VARIANT_J260X=J260X
 CR_DEFCON=NULL
 # Prefixes
 CR_ROOT="0"
@@ -117,11 +124,13 @@ if [ "$aud" = "TREBLE" -o "$aud" = "2" ]; then
      CR_MODE="2"
      CR_HALLIC="1"
      CR_PERMISSIVE="0"
+	 CR_TT=AOSP
 else
      echo "Build OneUI Variant"
      CR_MODE="1"
      CR_HALLIC="1"
      CR_PERMISSIVE="0"
+	 CR_TT=OneUI
 fi
 
 BUILD_CLEAN()
@@ -180,6 +189,15 @@ BUILD_IMAGE_NAME()
     FL_VARIANT="J400X-OneUI"
     FL_MODEL=j4lte
   fi
+  if [ $CR_VARIANT = $CR_VARIANT_J260X-TREBLE ]; then
+    FL_VARIANT="J260X-AOSP"
+    FL_MODEL=j2corelte
+  fi
+  if [ $CR_VARIANT = $CR_VARIANT_J260X-ONEUI ]; then
+    FL_VARIANT="J260X-OneUI"
+    FL_MODEL=j2corelte
+  fi
+
 }
 
 BUILD_GENERATE_CONFIG()
@@ -239,7 +257,10 @@ RUN_BUILD_DTB()
 		DTSFILES="exynos7570-j3y17lte_eur_open_00 exynos7570-j3y17lte_eur_open_01 
 		exynos7570-j3y17lte_kor_open_02 exynos7570-j3y17lte_eur_open_02 exynos7570-j3y17lte_eur_open_04"
 		;;
-	J330)
+	J400)
+		DTSFILES="exynos7570-j4lte_mea_open_00 exynos7570-j4lte_mea_open_01 exynos7570-j4lte_mea_open_02"
+		;;
+	J260)
 		DTSFILES="exynos7570-j4lte_mea_open_00 exynos7570-j4lte_mea_open_01 exynos7570-j4lte_mea_open_02"
 		;;
 	
@@ -289,22 +310,6 @@ BUILD_DTB()
 	echo " "
 	echo "----------------------------------------------"
 }
-ASARRE()
-{
-    mkdir outz
-	cp  $CR_KERNEL $CR_DIR/outz/boot.img-zImage
-}
-ASARRE3()
-{
-    mkdir outz
-	cp  $CR_KERNEL $CR_DIR/outz/J3boot.img-zImage
-}
-ASARRE4()
-{
-    mkdir outz
-	cp  $CR_KERNEL $CR_DIR/outz/J4boot.img-zImage
-}
-
 PACK_BOOT_IMG()
 {
 	echo "----------------------------------------------"
@@ -368,23 +373,30 @@ PACK_FLASHABLE()
 
 # Main Menu
 clear
-echo "--------------------------------------------------------"
-echo "  ###   ## #### ###### ##### #####  ####  ####  ###   ##"
-echo "  ####  ##  ##    ##   ##  # ## ##  ##    ##    ####  ##"
-echo "  ####  ##  ##    ##   ##### ## ##  ##    ##    ####  ##"
-echo "  ## ## ##  ##    ##   ###   ## ##  ## ## ####  ## ## ##"
-echo "  ##  ####  ##    ##   ## #  ## ##  ## ## ##    ##  ####"
-echo "  ##   ### ####   ##   ##  # #####  ##### ####  ##   ###"
-echo "--------------------------------------------------------"
-echo "$CR_NAME $CR_VERSION Build Script"
-echo "--------------------------------------------------------"
-PS3='Please select your option (1-10): '
+echo "*************************************************"
+echo "*         Nitrogen Kernel build script          *"
+echo "*           For Exynos 7570 Devices             *"
+echo "*             Developper: Asarre                *"
+echo "*                                               *"
+echo "* Version:$CR_VERSION                           *"
+echo "* Architecture: ARM64                           *"
+echo "* Build Type:$CR_TT                             *"
+echo "* Kernel Version: 3.18.140                      *"
+echo "* Android Version: 10 (Q)                       *"
+echo "*                                               *"
+echo "*                                               *"
+echo "*************************************************"
+echo " "
+echo " "
+PS3='Please select your Device (1-4): '
 menuvar=("SM-G570X" "SM-J330X" "SM-J400X" "SM-J260X" "Build_All" "Exit")
 select menuvar in "${menuvar[@]}"
 do
     case $menuvar in
         "SM-G570X")
             clear
+			echo " "
+            echo " "
             echo "Starting $CR_VARIANT_G570X kernel build..."
 			CR_A=G570
             CR_DTSFILES=$CR_DTSFILES_G570X
@@ -404,7 +416,7 @@ do
             BUILD_IMAGE_NAME
             BUILD_GENERATE_CONFIG
             BUILD_ZIMAGE
-	    ASARRE
+	    #ASARRE
             #BUILD_DTB
 	    #RUN_BUILD_DTB
             #PACK_BOOT_IMG
@@ -435,7 +447,7 @@ do
             BUILD_IMAGE_NAME
             BUILD_GENERATE_CONFIG
             BUILD_ZIMAGE
-			ASARRE3
+			#ASARRE3
             #BUILD_DTB
             #PACK_BOOT_IMG
             #PACK_FLASHABLE
@@ -456,7 +468,7 @@ do
               CR_DTB_MOUNT=$CR_DTS_TREBLE
             else
               echo " Building OneUI variant "
-	      CR_DEF= $CR_CONFG_J400X
+	      CR_DEF=$CR_CONFG_J400X
               CR_VARIANT=$CR_VARIANT_J400X-ONEUI
               CR_DTB_MOUNT=$CR_DTS_TREBLE
               CR_RAMDISK=$CR_RAMDISK
@@ -464,7 +476,7 @@ do
             BUILD_IMAGE_NAME
             BUILD_GENERATE_CONFIG
             BUILD_ZIMAGE
-			ASARRE4
+			#ASARRE4
             #BUILD_DTB
             #PACK_BOOT_IMG
             #PACK_FLASHABLE
@@ -472,8 +484,35 @@ do
             read -n1 -r key
             break
             ;;
-
-        "Build_All")
+        "SM-J260X")
+            clear
+            echo "Starting $CR_VARIANT_J260X kernel build..."
+	     CR_A=J260
+            CR_DTSFILES=$CR_DTSFILES_J260X
+            if [ $CR_MODE = "2" ]; then
+              echo " Building TREBLE variant "
+	      CR_DEF=$CR_CONFG_J260Xt
+              CR_VARIANT=$CR_VARIANT_J260X-TREBLE
+              CR_RAMDISK=$CR_RAMDISK
+              CR_DTB_MOUNT=$CR_DTS_TREBLE
+            else
+              echo " Building OneUI variant "
+	      CR_DEF=$CR_CONFG_J260X
+              CR_VARIANT=$CR_VARIANT_J260X-ONEUI
+              CR_DTB_MOUNT=$CR_DTS_TREBLE
+              CR_RAMDISK=$CR_RAMDISK
+            fi
+            BUILD_IMAGE_NAME
+            BUILD_GENERATE_CONFIG
+            BUILD_ZIMAGE
+            #BUILD_DTB
+            #PACK_BOOT_IMG
+            #PACK_FLASHABLE
+            #BUILD_OUT
+            read -n1 -r key
+            break
+            ;;
+            "Build_All")
             echo "Starting $CR_VARIANT_G570X kernel build..."	
 			CR_A=G570
             CR_DTSFILES=$CR_DTSFILES_G570X
@@ -521,7 +560,7 @@ do
             PACK_FLASHABLE
             BUILD_OUT
             echo "Starting $CR_VARIANT_J400X kernel build..."
-			CR_A=G570
+			CR_A=J400
             CR_DTSFILES=$CR_DTSFILES_J400X
             if [ $CR_MODE = "2" ]; then
               echo " Building TREBLE variant "
